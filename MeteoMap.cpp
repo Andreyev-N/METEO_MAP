@@ -34,8 +34,8 @@ int MeteoMap::add(unsigned codogram[8]) {
 	if (status == getting || status == start) {
 		initNewDirection();
 		if (currentBeam == NULL) {
-			justNewBeam();
-		} 
+			initNewBeam();
+		}
 	} else {
 		if (currentBeam != spaceMap[azimuth][elevation]) {
 			for (int i = 0; i < 8; i++) {
@@ -62,6 +62,12 @@ void MeteoMap::initNewDirection() {
 	newBeam->arrSize = 0;
 }
 
+void MeteoMap::initNewBeam() {
+	currentBeam = new beam;
+	currentBeam->pointArr = new point[BEAM_SIZE];
+	currentBeam->arrSize = 0;
+}
+
 void MeteoMap::handleSegment(unsigned segment) {
 	unsigned power = (segment & 0xE000) >> 13;
 	unsigned size = (segment & 0x1E00) >> 9;
@@ -84,21 +90,25 @@ void MeteoMap::handleSegment(unsigned segment) {
 			newPointRange--; // то есть в следующем цикле мы будем проверять эту же точку,
 			                // но сравнивать будем со следующей из currentBeam
 		}
+		if (newBeam->pointArr[newBeam->arrSize].power == 0) {
+			newBeam->arrSize--; //то есть мы удаляем точку из памяти, если ее мощьность нулевая
+		}
 	}
 }
 
-void MeteoMap::justNewBeam(){
-			currentBeam = new beam;
-			currentBeam->pointArr = new point[BEAM_SIZE];
-			currentBeam->arrSize = 0;
-		}
-
 void MeteoMap::recalcPower(const point oldPoint, const timespec oldTime, point* newPoint){
-	//
+	timespec currentTime = { 0, 0 };
+	unsigned oldPower = getActuaPower(oldPoint.power, oldTime);
+	newPoint->power = NEW_POINT_COEF * newPoint->power + oldPower;
 }
 
 unsigned MeteoMap::getActuaPower(unsigned power, timespec time) {
-	return power;
+	timespec currentTime = { 0, 0 };
+	timespec_get(&currentTime, TIME_UTC);
+	long dt_mlsec = (currentTime.tv_sec - time.tv_sec) * 1000 +
+		(currentTime.tv_sec - time.tv_sec) / 1000000; // разница времени в милисекундах
+	long weightCoef = 1 / (1 + U_COEF * pow(dt_mlsec, K_COEF));
+	return power * weightCoef;
 }
 
 void MeteoMap::finalizeFilling(unsigned azimuth, unsigned elevation) {
@@ -107,60 +117,3 @@ void MeteoMap::finalizeFilling(unsigned azimuth, unsigned elevation) {
 	lastBeam = newBeam;
 	status = getting;
 }
-
-
-	
-	/*for (int i = 3; i < 8; i++) { // для каждой строчки
-		if (codogram[i] == 0)
-			return true;
-		else {
-			beam* Beam = spaceMap[azimuth][elevation];
-			if (Beam == NULL) {  // не существует направления
-				Beam = new beam;
-				Beam->pointArr = new point[BEAM_SIZE];
-				//Beam->pointArr = &Point;
-				Beam->arrSize = 0;
-				Beam->time = {0,0};
-				timespec_get(&Beam->time, TIME_UTC);
-			}
-			point p;
-			p.power = (codogram[i] & 0xE000) >> 13;
-			unsigned size = (codogram[i] & 0x1E00) >> 9;
-			unsigned range = codogram[i] & 0x01FF;
-			for (int j = range; j < (int)(range + size); j++) {
-				p.range = j;
-				newPoint(azimuth, elevation, p);
-			}
-		}
-	}
-	return false;
-}
-
-void MeteoMap::newPoint(unsigned azimuth, unsigned elevation, point Point) {
-			handleBeam(Beam, Point);
-	}
-}
-
-void MeteoMap::handleBeam(beam* Beam, point Point) {
-	bool pointIsExist = false;
-	for (int i = 0; i < (int)Beam->arrSize; i++) {	
-		if (pointIsExist == false && Beam->pointArr[i].range == Point.range) {
-			recalcPower(Point, &(Beam->pointArr[i]));
-			pointIsExist = true;
-		}
-		Beam->pointArr[i].power = getActuaPower(Point, Beam->time);
-	}
-	if (!pointIsExist) {
-		Beam->pointArr[Beam->arrSize] = Point;
-		Beam->arrSize++;
-	}
-}
-
-int MeteoMap::getActuaPower(point p, timespec time) {
-	return p.power; //здесь будет мощность умноженная на весовой коэффициент
-}
-
-void MeteoMap::recalcPower(point newPoint, point* oldPoint) {
-	//алгоритм пересчета мощности
-}*/
-

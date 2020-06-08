@@ -2,12 +2,15 @@
 #include <time.h>  //Для clock_gettime
 #include <stdlib.h>
 #include <iostream>
+#include <math.h>
 
 #define AZIMUTH_SIZE 16384
 #define ELEVATION_SIZE 4096
 #define BEAM_SIZE 511
 #define DELIMITER "|"
-
+#define U_COEF 0.00001 //c такими коэфициентами за 10 секунд вероятность упадет до 50 процентов
+#define K_COEF 1       // пока не думал над значениями
+#define NEW_POINT_COEF 0.5  
 
 struct point {
 	unsigned range;
@@ -44,17 +47,17 @@ public:
 	const beam* getLastHandledBeam();
 	//beam getBeam(unsigned azimuth, unsigned elevation);
 private:
-	beam*** spaceMap;  
-	beam* lastBeam;
-	beam* currentBeam;
-	int currentPointIndex;
-	beam* newBeam;
-	Status status;
-	unsigned failureCodogram[8];
+	beam*** spaceMap; //хранится все
+	beam* lastBeam;   //хранится последнее обработанное направление, для метода getLastHandledBeam
+	beam* currentBeam;//хранится направление, которе сейчас обрабатывается.
+	int currentPointIndex;  //хранится номер точки из currentBeam, которая будет обработана следующая
+	beam* newBeam;    //новый массив, который заполняется в процессе обработки
+	Status status;    //состояние
+	unsigned failureCodogram[8]; 
 	
 	void recalcPower(const point oldPoint, const timespec oldTime, point* newPoint);
 	unsigned getActuaPower(unsigned power, timespec time);
-	void justNewBeam();
+	void initNewBeam();
 	void handleSegment(unsigned codogramLine);
 	void finalizeFilling(unsigned azimuth, unsigned elevation);
 	void initNewDirection();
