@@ -11,7 +11,7 @@
 
 struct point {
 	unsigned range;
-	int power;
+	unsigned power;
 };
 
 struct beam {
@@ -21,21 +21,42 @@ struct beam {
 
 };
 
+enum Status {
+	start,
+	filling,
+	getting,
+	failure
+};
+
+enum retValue { // возвращаемое значение для метода add
+	END_OF_DIRECTION = 0,  // коды можно поменять
+	CONTINUE_DIRECTION = 1,
+	FAILURE = 2
+};
+
 class MeteoMap
 {
 public:
 	MeteoMap();
 	~MeteoMap();
-	bool add(unsigned codogram[8]);
+	int add(unsigned codogram[8]);
 	//void printBeam(unsigned azimuth, unsigned elevation); 
-	beam getLastHandledBeam();
-	beam getBeam(unsigned azimuth, unsigned elevation);
+	const beam* getLastHandledBeam();
+	//beam getBeam(unsigned azimuth, unsigned elevation);
 private:
 	beam*** spaceMap;  
-
-	void newPoint(unsigned azimuth, unsigned elevation, point point);
-	void handleBeam(beam* Beam, point Point);
-	void recalcPower(point newPoint, point* oldPoint);
-	int getActuaPower(point p, timespec time);
+	beam* lastBeam;
+	beam* currentBeam;
+	int currentPointIndex;
+	beam* newBeam;
+	Status status;
+	unsigned failureCodogram[8];
+	
+	void recalcPower(const point oldPoint, const timespec oldTime, point* newPoint);
+	unsigned getActuaPower(unsigned power, timespec time);
+	void justNewBeam();
+	void handleSegment(unsigned codogramLine);
+	void finalizeFilling(unsigned azimuth, unsigned elevation);
+	void initNewDirection();
 };
 
