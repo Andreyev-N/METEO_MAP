@@ -112,6 +112,11 @@ unsigned MeteoMap::getActuaPower(unsigned power, timespec time) {
 }
 
 void MeteoMap::finalizeFilling(unsigned azimuth, unsigned elevation) {
+	for (int i = currentPointIndex; i < currentBeam->arrSize; i++) {
+		newBeam->pointArr[newBeam->arrSize].power = getActuaPower(
+			currentBeam->pointArr[currentPointIndex].power, currentBeam->time);
+		newBeam->arrSize++;
+	}
 	timespec_get(&newBeam->time, TIME_UTC);
 	spaceMap[azimuth][elevation] = newBeam;
 	lastBeam = newBeam;
