@@ -7,10 +7,11 @@
 #define AZIMUTH_SIZE 16384
 #define ELEVATION_SIZE 4096
 #define BEAM_SIZE 511
+
 #define DELIMITER "|"
 #define U_COEF 0.00001 //c такими коэфициентами за 10 секунд вероятность упадет до 50 процентов
 #define K_COEF 1       // пока не думал над значениями
-#define NEW_POINT_COEF 0.5  
+#define NEW_POINT_COEF 1  
 
 struct point {
 	unsigned range;
@@ -28,7 +29,6 @@ enum Status {
 	start,
 	filling,
 	getting,
-	failure
 };
 
 enum retValue { // возвращаемое значение для метода add
@@ -40,9 +40,9 @@ enum retValue { // возвращаемое значение для метода add
 class MeteoMap
 {
 public:
-	MeteoMap();
+	MeteoMap(long koef_u, long koef_k);
 	~MeteoMap();
-	int add(unsigned codogram[8]);
+	int add(unsigned short codogram[8]);
 	//void printBeam(unsigned azimuth, unsigned elevation); 
 	const beam* getLastHandledBeam();
 	//beam getBeam(unsigned azimuth, unsigned elevation);
@@ -53,12 +53,13 @@ private:
 	int currentPointIndex;  //хранится номер точки из currentBeam, которая будет обработана следующая
 	beam* newBeam;    //новый массив, который заполняется в процессе обработки
 	Status status;    //состояние
-	unsigned failureCodogram[8]; 
-	
+	long koef_u;
+	long koef_k;
+
 	void recalcPower(const point oldPoint, const timespec oldTime, point* newPoint);
 	unsigned getActuaPower(unsigned power, timespec time);
 	void initNewBeam();
-	void handleSegment(unsigned codogramLine);
+	void handleSegment(unsigned short codogramLine);
 	void finalizeFilling(unsigned azimuth, unsigned elevation);
 	void initNewDirection();
 };
