@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <math.h>
+#include <vld.h> //for tests 
 
 #define AZIMUTH_SIZE 16384
 #define ELEVATION_SIZE 4096
@@ -43,9 +44,8 @@ public:
 	MeteoMap(long koef_u, long koef_k);
 	~MeteoMap();
 	int add(unsigned short codogram[8]);
-	//void printBeam(unsigned azimuth, unsigned elevation); 
 	const beam* getLastHandledBeam();
-	//beam getBeam(unsigned azimuth, unsigned elevation);
+
 private:
 	beam*** spaceMap; //хранится все
 	beam* lastBeam;   //хранится последнее обработанное направление, для метода getLastHandledBeam
@@ -55,10 +55,11 @@ private:
 	Status status;    //состояние
 	long koef_u;
 	long koef_k;
+	unsigned lastAzimuth;
+	unsigned lastElevation;
 
 	void recalcPower(const point oldPoint, const timespec oldTime, point* newPoint);
 	unsigned getActuaPower(unsigned power, timespec time);
-	void initNewBeam();
 	void handleSegment(unsigned short codogramLine);
 	void finalizeFilling(unsigned azimuth, unsigned elevation);
 	void initNewDirection();

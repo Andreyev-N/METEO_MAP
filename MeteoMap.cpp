@@ -1,3 +1,4 @@
+
 #include "pch.h"
 #include "MeteoMap.h"
 
@@ -13,18 +14,16 @@ MeteoMap::MeteoMap(long koeff_u, long koeff_k){
 			spaceMap[i][j] = NULL;
 		}
 	}
-	//newBeam = new beam;
-	//newBeam->pointArr = new point[BEAM_SIZE];
-	//currentBeam = new beam;
-	//currentBeam->pointArr = new point[BEAM_SIZE];
+	newBeam = new beam;
+	newBeam->pointArr = new point[BEAM_SIZE];
 	status = start;
-	//currentBeam = NULL;
-	//lastBeam = NULL;
 }
 
 MeteoMap::~MeteoMap(){
 	for (int i = 0; i < AZIMUTH_SIZE; i++) {
 		for (int j = 0; j < ELEVATION_SIZE; j++) {
+			if(spaceMap[i][j] != NULL)
+				delete [] spaceMap[i][j]->pointArr;
 			delete spaceMap[i][j];
 		}
 	}
@@ -32,11 +31,8 @@ MeteoMap::~MeteoMap(){
 		delete[] spaceMap[i];
 	}
 	delete [] spaceMap;
-	//delete [] newBeam->pointArr;
-	//delete newBeam;
-	//delete[] currentBeam->pointArr;
-	//delete currentBeam;
-	//delete lastBeam;
+	delete [] newBeam->pointArr;
+	delete newBeam;
 }
 
 const beam* MeteoMap::getLastHandledBeam() {
@@ -48,15 +44,14 @@ int MeteoMap::add(unsigned short codogram[8]) {
 	unsigned azimuth = codogram[1] & 0x3FFF;
 	unsigned elevation = codogram[2];
 	if (status == filling) {
-		if (currentBeam != spaceMap[azimuth][elevation]) {
-			finalizeFilling(azimuth, elevation); 
+		if (azimuth != lastAzimuth || elevation != lastElevation) {
+			finalizeFilling(lastAzimuth, lastElevation);
 			return FAILURE;
 		} 
 	} else {
+		lastAzimuth = azimuth;
+		lastElevation = elevation;
 		currentBeam = spaceMap[azimuth][elevation];
-		if (currentBeam == NULL) {
-			initNewBeam();
-		}
 		initNewDirection();
 	}
 	for (int j = 3; j < 8; j++) {
@@ -72,18 +67,16 @@ int MeteoMap::add(unsigned short codogram[8]) {
 }
 
 void MeteoMap::initNewDirection() {
+	if (currentBeam == NULL) {
+		currentBeam = new beam;
+		currentBeam->pointArr = new point[BEAM_SIZE];
+		currentBeam->arrSize = 0;
+	} 
 	status = filling;
 	currentPointIndex = 0;
-	newBeam = new beam;                       //нет delete
-	newBeam->pointArr = new point[BEAM_SIZE]; //нет delete
 	newBeam->arrSize = 0;
 }
 
-void MeteoMap::initNewBeam() {
-	currentBeam = new beam;
-	currentBeam->pointArr = new point[BEAM_SIZE];
-	currentBeam->arrSize = 0;
-}
 
 void MeteoMap::handleSegment(unsigned short segment) {
 	unsigned power = (segment & 0xE000) >> 13;
@@ -137,13 +130,17 @@ void MeteoMap::finalizeFilling(unsigned azimuth, unsigned elevation) {
 		newBeam->arrSize++;
 	}
 	timespec_get(&newBeam->time, TIME_UTC);
-	//delete [] currentBeam->pointArr;
-	//delete currentBeam;
-	currentBeam == NULL;
-	//delete spaceMap[azimuth][elevation];
+	if (currentBeam != lastBeam) {
+		delete[] currentBeam->pointArr;
+		delete currentBeam;
+	}
+	if (spaceMap[azimuth][elevation] == lastBeam && spaceMap[azimuth][elevation] != NULL) {
+		delete[] spaceMap[azimuth][elevation]->pointArr;
+		delete spaceMap[azimuth][elevation];
+	}
 	spaceMap[azimuth][elevation] = newBeam;
 	lastBeam = newBeam;
-	//delete newBeam;
-	//delete[] currentBeam->pointArr;
+	newBeam = new beam;
+	newBeam->pointArr = new point[BEAM_SIZE];
 	status = getting;
 }
