@@ -84,9 +84,10 @@ void MeteoMap::handleSegment(unsigned short segment) {
 	unsigned power = (segment & 0xE000) >> 13;
 	unsigned size = (segment & 0x1E00) >> 9;
 	unsigned range = segment & 0x01FF;
+	currentBeam->pointArr[0].range = 0;
 	for (unsigned newPointRange = range; newPointRange < (range + size); newPointRange++) { //перебираем отрезок по точкам
 		point newPoint = { newPointRange, power };
-		if (newPointRange < currentBeam->pointArr[currentPointIndex].range) {
+		if (newPointRange < currentBeam->pointArr[currentPointIndex].range || currentBeam->arrSize == 0) {
 			newBeam->pointArr[newBeam->arrSize] = newPoint; // просто добавляем в конец 
 			newBeam->arrSize++;
 		} else if (newPointRange == currentBeam->pointArr[currentPointIndex].range){
