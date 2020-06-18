@@ -33,6 +33,10 @@ MeteoMap::~MeteoMap(){
 	delete [] spaceMap;
 	delete [] newBeam->pointArr;
 	delete newBeam;
+	if (status == CONTINUE_DIRECTION) {
+		delete[] currentBeam->pointArr;
+		delete currentBeam;
+	}
 }
 
 const beam* MeteoMap::getLastHandledBeam() {
@@ -56,13 +60,11 @@ int MeteoMap::add(unsigned short codogram[8]) {
 	}
 	for (int j = 3; j < 8; j++) {
 		if (codogram[j] == NULL) {
-			finalizeFilling(azimuth, elevation);
+			finalizeFilling(lastAzimuth, lastElevation);
 			return END_OF_DIRECTION;
 		}
 		handleSegment(codogram[j]);
 	}
-	delete[] spaceMap[azimuth][elevation];
-	spaceMap[azimuth][elevation] = currentBeam;
 	return CONTINUE_DIRECTION;
 }
 
@@ -92,7 +94,7 @@ void MeteoMap::handleSegment(unsigned short segment) {
 			newBeam->pointArr[newBeam->arrSize] = newPoint;
 			newBeam->arrSize++;
 			currentPointIndex++;
-		} else if (newPointRange > currentBeam->pointArr[currentPointIndex].range) {
+		} else /*if (newPointRange > currentBeam->pointArr[currentPointIndex].range)*/ {
 			newBeam->pointArr[newBeam->arrSize].power = getActuaPower(
 				currentBeam->pointArr[currentPointIndex].power, currentBeam->time);
 			newBeam->pointArr[newBeam->arrSize].range = currentBeam->pointArr[currentPointIndex].range;

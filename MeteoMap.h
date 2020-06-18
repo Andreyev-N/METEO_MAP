@@ -10,9 +10,6 @@
 #define BEAM_SIZE 511
 
 #define DELIMITER "|"
-#define U_COEF 0.00001 //c такими коэфициентами за 10 секунд вероятность упадет до 50 процентов
-#define K_COEF 1       // пока не думал над значениями
-#define NEW_POINT_COEF 1  
 
 struct point {
 	unsigned range;
